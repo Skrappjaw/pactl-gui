@@ -1,10 +1,10 @@
-# PulseAudio Control GUI (pactl-gui)
+# PulseAudio/PipeWire Control GUI (pactl-gui)
 
-A lightweight graphical user interface for managing PulseAudio modules and configurations.
+A lightweight graphical user interface for managing audio modules and configurations on PulseAudio and PipeWire systems.
 
 ## Project Overview
 
-PulseAudio Control GUI provides a simple, user-friendly interface for common PulseAudio tasks that would otherwise require command-line expertise. The application focuses on managing audio modules, creating virtual devices, and setting up audio routing configurations for specific use cases.
+PulseAudio/PipeWire Control GUI provides a simple, user-friendly interface for common audio management tasks that would otherwise require command-line expertise. The application works with both PulseAudio and PipeWire systems, focusing on managing audio modules, creating virtual devices, and setting up audio routing configurations for specific use cases.
 
 ## Current Features (MVP)
 
@@ -13,6 +13,19 @@ PulseAudio Control GUI provides a simple, user-friendly interface for common Pul
 - **Module Management**: View and unload PulseAudio modules
 - **Basic Preset Saving**: Save current configuration as a preset
 - **Command Output Display**: View the results of PulseAudio operations
+
+## Screenshots
+
+### Main Interface
+![Main Interface](docs/screenshots/pactl-gui-main-interface.jpg)
+
+### Device Management
+Organized hardware device grouping with individual device controls:
+![Device Management](docs/screenshots/pactl-gui-device-management.jpg)
+
+### Command Logging
+Real-time command execution tracking and output:
+![Output Tab](docs/screenshots/pactl-gui-output-tab.png)
 
 ## Future Features
 
@@ -47,30 +60,22 @@ The application adheres to the following principles:
 ### Prerequisites
 
 - Python 3.6+
-- PulseAudio with pactl command
+- **Either** PulseAudio OR PipeWire audio system (most modern Linux distributions include one of these)
 - Tkinter (Python's standard GUI package)
+
+**Note**: This application works with both PulseAudio and PipeWire systems. Most modern Linux distributions come with either PulseAudio or PipeWire already installed and configured. You typically don't need to install additional audio system packages.
 
 ### Installing Dependencies
 
-#### PulseAudio
-Check if pactl is installed:
-```bash
-which pactl
-```
-If not installed, install it with your package manager:
-```bash
-# Debian/Ubuntu
-sudo apt-get install pulseaudio-utils
+#### Python and Tkinter
+The main dependencies you may need to install are Python 3 and Tkinter:
 
-# Fedora
-sudo dnf install pulseaudio-utils
-
-# openSUSE
-sudo zypper install pulseaudio-utils
+**Python 3**: Usually pre-installed on most Linux distributions. Check with:
+```bash
+python3 --version
 ```
 
-#### Tkinter
-Tkinter is usually included with Python, but if not installed:
+**Tkinter**: Usually included with Python, but may need separate installation:
 ```bash
 # Debian/Ubuntu
 sudo apt-get install python3-tk
@@ -83,6 +88,35 @@ sudo zypper install python313-tk  # Replace 313 with your Python version
 
 # Arch Linux
 sudo pacman -S tk
+```
+
+#### Audio System Compatibility
+This application works with:
+- **PulseAudio**: Uses `pactl` commands (widely supported)
+- **PipeWire**: Compatible through PulseAudio compatibility layer
+
+**Checking your audio system**:
+```bash
+# Check if pactl is available (should work on both systems)
+which pactl
+
+# Check what audio system you're running
+systemctl --user status pulseaudio pipewire-pulse
+```
+
+**If pactl is missing** (rare on modern systems):
+```bash
+# Debian/Ubuntu
+sudo apt-get install pulseaudio-utils
+
+# Fedora
+sudo dnf install pulseaudio-utils
+
+# openSUSE
+sudo zypper install pulseaudio-utils
+
+# Arch Linux
+sudo pacman -S pulseaudio
 ```
 
 ### Installation
@@ -143,7 +177,7 @@ The application is organized into tabs:
 
 1. **Create**: Create new duplex sinks with custom names and channel configurations
 2. **Manage**: View and manage existing sinks, sources, and modules
-3. **Output**: View the output of PulseAudio commands
+3. **Output**: View the output of audio system commands
 
 #### Creating a Duplex Sink
 
@@ -175,4 +209,4 @@ Currently in early development with basic MVP functionality implemented.
 
 ## Contributing
 
-Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for details on how to get involved. 
+Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for details on how to get involved.
