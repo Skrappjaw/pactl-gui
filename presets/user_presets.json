@@ -1,0 +1,16 @@
+{
+  "repo-in": {
+    "channels": "2",
+    "channel_map": "",
+    "description": "repo-in",
+    "created": "2025-05-31T17:30:24.908355",
+    "builtin": false
+  },
+  "repo-out": {
+    "channels": "2",
+    "channel_map": "",
+    "description": "repo-out",
+    "created": "2025-05-31T17:30:38.318449",
+    "builtin": false
+  }
+}

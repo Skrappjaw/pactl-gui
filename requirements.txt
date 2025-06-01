@@ -1,0 +1,27 @@
+# PulseAudio Control GUI - Dependencies
+#
+# This application has minimal dependencies by design
+
+# Python Dependencies:
+# - Python 3.6+ (required)
+# - tkinter (usually included with Python, but may need separate package on some distributions)
+
+# System Dependencies:
+# - PulseAudio with pactl command-line utility
+# - X11 or Wayland display server (for GUI)
+
+# Installation commands for common distributions:
+#
+# Ubuntu/Debian:
+#   sudo apt install python3 python3-tkinter pulseaudio pulseaudio-utils
+#
+# Fedora/RHEL/CentOS:
+#   sudo dnf install python3 python3-tkinter pulseaudio pulseaudio-utils
+#
+# Arch Linux:
+#   sudo pacman -S python tk pulseaudio
+#
+# openSUSE:
+#   sudo zypper install python3 python3-tk pulseaudio pulseaudio-utils
+
+# Note: No pip packages are required - this application uses only Python standard library 
