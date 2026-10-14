@@ -1,0 +1,22 @@
+# shellcheck shell=bash
+# Desktop database update for the pulsar package.
+# Re-registers pulsar.desktop with update-desktop-database so the menu entry
+# appears without a session restart.
+
+post_install() {
+  if command -v update-desktop-database >/dev/null 2>&1; then
+    update-desktop-database -q
+  else
+    echo "update-desktop-database not found; skipping menu cache update." >&2
+  fi
+}
+
+post_upgrade() {
+  post_install
+}
+
+post_remove() {
+  if command -v update-desktop-database >/dev/null 2>&1; then
+    update-desktop-database -q
+  fi
+}

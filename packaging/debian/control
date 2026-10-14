@@ -1,0 +1,28 @@
+Source: pulsar
+Section: sound
+Priority: optional
+Maintainer: Pulsar Maintainers <maintainers@example.invalid>
+Build-Depends: debhelper-compat (= 13), python3
+Standards-Version: 4.6.2
+Rules-Requires-Root: no
+
+Package: pulsar
+Version: 0.1.0
+Architecture: all
+Depends: python3 (>= 3.9), python3-tk, pulseaudio-utils
+Recommends: wireplumber, pipewire-pulse
+Suggests: pavucontrol
+Section: sound
+Priority: optional
+Maintainer: Pulsar Maintainers <maintainers@example.invalid>
+Homepage: https://github.com/skomesh/pulsar
+Description: Graphical PulseAudio/PipeWire routing manager
+ Pulsar is a Tkinter GUI around pactl for inspecting and routing audio
+ streams between sinks and sources. It offers per-application volume and
+ mute control, stream routing, sink/source selection, and reusable
+ profiles (presets).
+ .
+ Starter profiles ship read-only inside the package. Profiles you create
+ are stored per user under $XDG_DATA_HOME/pulsar (normally
+ ~/.local/share/pulsar) and are never touched by installing, upgrading or
+ removing this package.

@@ -1,0 +1,150 @@
+# Maintainer: Skomesh <skomesh@users.noreply.github.com>
+# Contributor: Pulsar AUR packaging
+#
+# shellcheck shell=bash
+# SC2034 (pkgver/pkgrel/arch/... "appear unused") is expected here: makepkg
+# reads these, shellcheck cannot see it. Run `makepkg` for the real check.
+# shellcheck disable=SC2034
+# $srcdir / $pkgdir are exported by makepkg, not by this file.
+# shellcheck disable=SC2154
+
+pkgname=pulsar
+pkgver=0.1.0
+pkgrel=1
+pkgdesc='Graphical audio routing manager for PulseAudio/PipeWire (fork of pactl-gui)'
+arch=('any')
+url='https://github.com/skomesh/pulsar'
+license=('MIT')
+install=pulsar.install
+
+# Upstream publishes NO release tags (`git tag -l` returns empty), so there is
+# no versioned release tarball to point at. We pin an exact commit and record
+# its real checksum -- reproducible, and no 'SKIP' entry. Upstream name
+# mangling (pulsar-<sha>.tar.gz -> pulsar-0.1.0.tar.gz) needs no handling here
+# because we never rename: makepkg's srcdir is the top-level extracted dir.
+#
+# To move to a real tag later: set _srcrelease and point source at
+# "https://github.com/$pkgname/pulsar/archive/v$_pkgver.tar.gz".
+_srccommit='ade1bb9dc0e65094e74886ea94e25ab5b342750d' # branch fix/wheel-missing-presets-and-entrypoint
+
+# The codeload URL's basename is the bare commit SHA (no extension), which
+# makes makepkg create a broken srcdir symlink. Resolve the single
+# top-level directory the archive actually extracts to instead of
+# assuming a name.
+_topdir() {
+  local dirs
+  # -type d excludes makepkg's own (possibly dangling) symlink.
+  mapfile -t dirs < <(find "$srcdir" -mindepth 1 -maxdepth 1 -type d)
+  if [[ ${#dirs[@]} -ne 1 ]]; then
+    echo "expected exactly 1 top-level source dir, found ${#dirs[@]}" >&2
+    return 1
+  fi
+  printf '%s\n' "${dirs[0]}"
+}
+source=("https://codeload.github.com/skomesh/pulsar/tar.gz/$_srccommit")
+sha256sums=('c2e3ee867d491f5df1faac2aeb3f2bf81c0a38891a5b5af95da4b87cbe61f7f9')
+
+# Runtime deps and the command/feature each provides:
+#   python         -> the `python3` interpreter this app runs on (needs >=3.6)
+#   tk             -> Tcl/Tk 8.6 runtime; the `_tkinter` C module links
+#                     libtk8.6.so, and every GUI module imports tkinter
+#   libpulse       -> /usr/bin/pactl. main.py hard-exits if pactl is missing,
+#                     and utils/pactl_runner.py is the core of the app.
+#                     NOTE: there is NO `pulseaudio-utils` package on Arch;
+#                     pactl ships inside `libpulse`. Do not add it.
+#   pipewire       -> /usr/bin/pw-dump     (utils/pw_diagnostics.py, pw_app_capture.py)
+#   pipewire-audio -> /usr/bin/pw-record   (loopback capture in pw_app_capture.py)
+#   glib2          -> /usr/bin/gdbus       (org.freedesktop.PolicyKit1 calls)
+# The app imports only the Python standard library, so there are no pip deps.
+depends=('python' 'tk' 'libpulse' 'pipewire' 'pipewire-audio' 'glib2')
+optdepends=('libnotify: desktop notifications on volume changes'
+            'polkit: privilege escalation prompts for wireplumber operations')
+makedepends=()
+
+# Importable tree lives here. src/config/paths.py resolves the bundled presets
+# as <parents-of-config>/utils/presets, so this layout makes
+# builtin_presets_path() find builtin_profiles.json unpatched.
+_pkgdir_name='/usr/lib/pulsar'
+
+build() {
+  # Nothing to compile: pure Python, stdlib only. The source tree is installed
+  # verbatim so the top-level `ui`, `utils`, `config` imports resolve.
+  :
+}
+
+check() {
+  # Upstream's own test suite. Off by default; pytest is not a build
+  # requirement. Enable with: makepkg -e _run_tests=1 ... (needs pytest).
+  if [[ ${_run_tests:-0} == 1 ]] && command -v pytest >/dev/null 2>&1; then
+    local src
+    src=$(_topdir) || return 1
+    cd "$src" || return 1
+    PYTHONPATH="$src/src" pytest tests
+  else
+    echo "check() skipped (set _run_tests=1 and install pytest to enable)."
+  fi
+}
+
+package() {
+  local src
+  src=$(_topdir) || return 1
+  cd "$src" || return 1
+
+  # --- desktop entry -------------------------------------------------------
+  # The repo's pulsar.desktop is a TEMPLATE with Exec=PLACEHOLDER_EXEC_PATH.
+  # Substitute the real absolute path of the installed wrapper.
+  sed -e 's|Exec=PLACEHOLDER_EXEC_PATH|Exec=/usr/bin/pulsar|g' \
+      -e '/^# This is a template file/,$d' \
+      pulsar.desktop > pulsar.desktop.pkg
+  grep -q '^Exec=/usr/bin/pulsar$' pulsar.desktop.pkg \
+    || { echo "desktop Exec substitution failed" >&2; return 1; }
+  grep -q 'PLACEHOLDER' pulsar.desktop.pkg \
+    && { echo "unsubstituted placeholder in desktop file" >&2; return 1; }
+
+  # --- importable package tree -------------------------------------------
+  install -dm755 "$pkgdir$_pkgdir_name"
+
+  # The importable tree lives under src/ in the repo, not at its root.
+  cd src || return 1
+
+  # Entry module. main.py appends its own dir to sys.path, so the sibling
+  # packages below resolve.
+  install -Dm644 main.py "$pkgdir$_pkgdir_name/main.py"
+  install -Dm644 __init__.py "$pkgdir$_pkgdir_name/__init__.py"
+
+  # Sub-packages: modules plus any package data, minus build cruft.
+  for dir in ui utils config; do
+    find "$dir" -name '__pycache__' -prune -exec rm -rf {} + 2>/dev/null || true
+    find "$dir" -name '*.pyc' -delete 2>/dev/null || true
+    install -dm755 "$pkgdir$_pkgdir_name/$dir"
+    # builtin_profiles.json is installed once below, into utils/presets/;
+    # skip the flat copy so paths.py's first probe is the only one.
+    find "$dir" -type f ! -name builtin_profiles.json \
+      -exec install -Dm644 -t "$pkgdir$_pkgdir_name/$dir" {} +
+  done
+
+  # Bundled starter presets. paths.py probes <pkg>/utils/presets FIRST, so
+  # these must live inside the package -- this is exactly what the pinned
+  # commit ("wheel missing presets") fixes for the pip/wheel install path.
+  install -Dm644 utils/presets/builtin_profiles.json \
+    "$pkgdir$_pkgdir_name/utils/presets/builtin_profiles.json"
+
+  # --- console wrapper -----------------------------------------------------
+  # Equivalent to the pyproject entry point `pulsar = main:main`.
+  # (written inside src/, so the stray artifact is cleaned below)
+  cat > pulsar-launcher <<EOF
+#!/usr/bin/python3
+# Pulsar launcher - installed by the Arch PKGBUILD.
+import sys
+sys.path.insert(0, '$_pkgdir_name')
+from main import main
+sys.exit(main())
+EOF
+  install -Dm755 pulsar-launcher "$pkgdir/usr/bin/pulsar"
+  rm -f pulsar-launcher
+
+  # --- data files (repo root, so back out of src/ first) --------------------
+  cd "$src" || return 1
+  install -Dm644 pulsar.desktop.pkg "$pkgdir/usr/share/applications/pulsar.desktop"
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}

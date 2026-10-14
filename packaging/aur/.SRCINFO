@@ -1,0 +1,20 @@
+pkgbase = pulsar
+	pkgdesc = Graphical audio routing manager for PulseAudio/PipeWire (fork of pactl-gui)
+	pkgver = 0.1.0
+	pkgrel = 1
+	url = https://github.com/skomesh/pulsar
+	install = pulsar.install
+	arch = any
+	license = MIT
+	depends = python
+	depends = tk
+	depends = libpulse
+	depends = pipewire
+	depends = pipewire-audio
+	depends = glib2
+	optdepends = libnotify: desktop notifications on volume changes
+	optdepends = polkit: privilege escalation prompts for wireplumber operations
+	source = https://codeload.github.com/skomesh/pulsar/tar.gz/ade1bb9dc0e65094e74886ea94e25ab5b342750d
+	sha256sums = c2e3ee867d491f5df1faac2aeb3f2bf81c0a38891a5b5af95da4b87cbe61f7f9
+
+pkgname = pulsar

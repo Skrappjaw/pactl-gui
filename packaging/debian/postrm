@@ -1,0 +1,37 @@
+#!/bin/sh
+# postrm for the pulsar package.
+#
+# Policy: this package owns /usr paths ONLY. Pulsar stores user-created
+# presets under $XDG_DATA_HOME/pulsar (default ~/.local/share/pulsar).
+# That data is deliberately never shipped in the .deb and is never
+# deleted here -- uninstalling Pulsar must not destroy a user's profiles.
+#
+# dpkg has already removed every packaged file by the time this runs, so
+# this script only sweeps leftovers: directories this package created that
+# dpkg leaves behind when they become empty, and the generated
+# /usr/bin/pulsar launcher if anything recreated it.
+
+set -e
+
+PKGDIR=/usr/share/pulsar
+
+case "$1" in
+    remove|purge)
+        # Remove the launcher and the (now empty) install directories.
+        # Only /usr is touched -- no $HOME, no XDG paths.
+        rm -f /usr/bin/pulsar
+        rm -f /usr/share/applications/pulsar.desktop
+        # Running the app as root leaves __pycache__ behind, which dpkg
+        # cannot account for (it only knows about packaged files). These
+        # are regenerable bytecode caches under /usr, never user data.
+        find "$PKGDIR" -type d -name __pycache__ -prune -exec rm -rf {} + 2>/dev/null || true
+        find "$PKGDIR" -type f -name '*.py[co]' -delete 2>/dev/null || true
+        find "$PKGDIR" -depth -type d -exec rmdir {} + 2>/dev/null || true
+        rmdir --ignore-fail-on-non-empty /usr/share/doc/pulsar 2>/dev/null || true
+        ;;
+    upgrade|failed-upgrade|abort-install|abort-upgrade)
+        ;;
+esac
+
+# Explicit, unconditional statement of intent: user data is preserved.
+exit 0

@@ -36,3 +36,11 @@ Thumbs.db
 
 # User-specific
 presets/user_presets.json
+# Debian packaging build output
+build/deb/
+packaging/debian/build/
+
+# AUR build output
+packaging/aur/*.pkg.tar.*
+packaging/aur/src/
+pkg/
